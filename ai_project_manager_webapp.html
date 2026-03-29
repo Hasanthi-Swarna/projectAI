@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProjectAI - Interactive Planning Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Crimson+Pro:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e27;
+            --bg-secondary: #141937;
+            --bg-card: #1a1f3a;
+            --accent-primary: #00ff88;
+            --accent-secondary: #00d4ff;
+            --accent-tertiary: #ff0080;
+            --text-primary: #ffffff;
+            --text-secondary: #a0aec0;
+            --text-muted: #718096;
+            --border: #2d3748;
+            --shadow: rgba(0, 255, 136, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Crimson Pro', serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Animated background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.03;
+            background: 
+                linear-gradient(45deg, transparent 48%, var(--accent-primary) 49%, var(--accent-primary) 51%, transparent 52%),
+                linear-gradient(-45deg, transparent 48%, var(--accent-secondary) 49%, var(--accent-secondary) 51%, transparent 52%);
+            background-size: 100px 100px;
+            animation: bgMove 20s linear infinite;
+        }
+
+        @keyframes bgMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(100px, 100px); }
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--accent-primary);
+            padding: 1.5rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .header .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 2rem;
+            min-height: calc(100vh - 120px);
+        }
+
+        /* Chat Section */
+        .chat-section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 60px var(--shadow);
+        }
+
+        .chat-header {
+            padding: 1.5rem;
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
+            border-bottom: 1px solid var(--border);
+        }
+
+        .chat-header h2 {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.2rem;
+            color: var(--accent-primary);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            max-height: 60vh;
+        }
+
+        .message {
+            margin-bottom: 1.5rem;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            text-align: right;
+        }
+
+        .message-bubble {
+            display: inline-block;
+            max-width: 80%;
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: var(--bg-primary);
+            font-weight: 500;
+        }
+
+        .message.bot .message-bubble {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            text-align: left;
+        }
+
+        .message-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Input Area */
+        .chat-input-area {
+            padding: 1.5rem;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 0.875rem 1.25rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'Crimson Pro', serif;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
+        }
+
+        .send-btn {
+            padding: 0.875rem 1.75rem;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 12px;
+            font-family: 'Space Mono', monospace;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 255, 136, 0.3);
+        }
+
+        .send-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Results Section */
+        .results-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .result-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 20px 60px var(--shadow);
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-card h3 {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: var(--accent-primary);
+            border-left: 4px solid var(--accent-primary);
+            padding-left: 1rem;
+        }
+
+        .plan-section {
+            margin-bottom: 2rem;
+        }
+
+        .plan-section h4 {
+            font-family: 'Space Mono', monospace;
+            font-size: 1rem;
+            color: var(--accent-secondary);
+            margin-bottom: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .phase-item {
+            background: var(--bg-secondary);
+            border-left: 3px solid var(--accent-tertiary);
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .phase-item:hover {
+            transform: translateX(5px);
+            border-left-color: var(--accent-primary);
+        }
+
+        .phase-name {
+            font-weight: 600;
+            font-size: 1.05rem;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .phase-duration {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--accent-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .phase-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .critique-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 0, 128, 0.1);
+            border: 1px solid var(--accent-tertiary);
+            border-radius: 20px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent-tertiary);
+            margin-top: 0.5rem;
+        }
+
+        .approve-badge {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            border-color: var(--accent-primary);
+            background: rgba(0, 255, 136, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: var(--bg-primary);
+            border: none;
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .loading-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            animation: loadingPulse 1.4s infinite;
+        }
+
+        .loading-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loading-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes loadingPulse {
+            0%, 80%, 100% {
+                opacity: 0.3;
+                transform: scale(0.8);
+            }
+            40% {
+                opacity: 1;
+                transform: scale(1.2);
+            }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        /* Responsive */
+        @media (max-width: 968px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .chat-messages {
+                max-height: 50vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    
+    <div class="header">
+        <h1>🤖 ProjectAI</h1>
+        <div class="subtitle">Multi-Agent Planning Assistant with Real-time Collaboration</div>
+    </div>
+
+    <div class="container">
+        <!-- Chat Section -->
+        <div class="chat-section">
+            <div class="chat-header">
+                <h2>💬 Planning Chat</h2>
+            </div>
+            
+            <div class="chat-messages" id="chatMessages">
+                <div class="message bot">
+                    <div class="message-label">🤖 AI Assistant</div>
+                    <div class="message-bubble">
+                        <strong>Welcome to AI Project Manager!</strong><br><br>
+                        I'm here to help you plan your project. Tell me about your idea, and I'll work with my team of AI agents to create a comprehensive project plan.<br><br>
+                        You can:<br>
+                        • Describe your project idea<br>
+                        • Request modifications to any phase<br>
+                        • Ask questions about the plan<br>
+                        • Export your plan and timeline
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chat-input-area">
+                <div class="input-wrapper">
+                    <input 
+                        type="text" 
+                        class="chat-input" 
+                        id="userInput" 
+                        placeholder="Describe your project idea or ask for modifications..."
+                        onkeypress="handleKeyPress(event)"
+                    >
+                    <button class="send-btn" onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection">
+            <div class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <p>Your project plan will appear here once you describe your idea.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        let currentPlan = null;
+        let conversationHistory = [];
+        let processingStage = 'idle'; // idle, strategizing, critiquing, finalizing
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            addMessage('user', message);
+            input.value = '';
+            
+            // Process the message
+            processUserMessage(message);
+        }
+
+        function addMessage(sender, content) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const label = sender === 'user' ? '👤 You' : '🤖 AI Assistant';
+            
+            messageDiv.innerHTML = `
+                <div class="message-label">${label}</div>
+                <div class="message-bubble">${content}</div>
+            `;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function showLoading() {
+            addMessage('bot', `
+                <div class="loading">
+                    <span>Processing</span>
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                </div>
+            `);
+        }
+
+        function removeLastMessage() {
+            const messagesDiv = document.getElementById('chatMessages');
+            if (messagesDiv.lastChild) {
+                messagesDiv.removeChild(messagesDiv.lastChild);
+            }
+        }
+
+        async function processUserMessage(message) {
+            showLoading();
+            
+            // Simulate AI processing with multiple agents
+            await simulateMultiAgentProcessing(message);
+        }
+
+        async function simulateMultiAgentProcessing(userIdea) {
+            // Phase 1: Strategist creates plan
+            removeLastMessage();
+            addMessage('bot', '🧠 <strong>Strategist Agent</strong> is analyzing your idea and creating a project roadmap...');
+            
+            await sleep(2000);
+            
+            const plan = generateProjectPlan(userIdea);
+            
+            // Phase 2: Critic reviews
+            removeLastMessage();
+            addMessage('bot', '🔍 <strong>Critic Agent</strong> is reviewing the plan for completeness and realism...');
+            
+            await sleep(1500);
+            
+            const critique = generateCritique(plan);
+            
+            // Phase 3: Results
+            removeLastMessage();
+            
+            if (critique.approved) {
+                addMessage('bot', `
+                    ✅ <strong>Plan Approved!</strong><br><br>
+                    The Critic Agent has reviewed and approved the project plan. Check the right panel for your comprehensive project roadmap with timelines and phases.
+                `);
+                
+                displayPlan(plan, critique);
+                currentPlan = plan;
+            } else {
+                addMessage('bot', `
+                    ⚠️ <strong>Plan Needs Refinement</strong><br><br>
+                    ${critique.feedback}<br><br>
+                    I'll revise the plan based on this feedback...
+                `);
+                
+                // Simulate revision
+                await sleep(2000);
+                await simulateMultiAgentProcessing(userIdea);
+            }
+        }
+
+        function generateProjectPlan(userIdea) {
+            // This simulates the Groq API call
+            // In production, this would call your actual Groq-powered agents
+            
+            const projectName = extractProjectName(userIdea);
+            
+            return {
+                project_name: projectName,
+                user_idea: userIdea,
+                phases: [
+                    {
+                        name: "Planning & Requirements",
+                        duration_days: 7,
+                        start_date: getDateString(0),
+                        description: "Define project scope, gather requirements, and create technical specifications."
+                    },
+                    {
+                        name: "Design & Architecture",
+                        duration_days: 10,
+                        start_date: getDateString(7),
+                        description: "Create system architecture, database schema, and UI/UX mockups."
+                    },
+                    {
+                        name: "Core Development",
+                        duration_days: 21,
+                        start_date: getDateString(17),
+                        description: "Implement core features, build backend APIs, and frontend components."
+                    },
+                    {
+                        name: "Testing & QA",
+                        duration_days: 7,
+                        start_date: getDateString(38),
+                        description: "Unit testing, integration testing, and user acceptance testing."
+                    },
+                    {
+                        name: "Deployment & Launch",
+                        duration_days: 5,
+                        start_date: getDateString(45),
+                        description: "Deploy to production, monitor performance, and gather initial feedback."
+                    }
+                ]
+            };
+        }
+
+        function generateCritique(plan) {
+            // Simulate Critic Agent evaluation
+            return {
+                approved: true,
+                feedback: "The timeline is realistic and all critical phases are included."
+            };
+        }
+
+        function displayPlan(plan, critique) {
+            const resultsDiv = document.getElementById('resultsSection');
+            
+            let phasesHTML = '';
+            plan.phases.forEach((phase, index) => {
+                phasesHTML += `
+                    <div class="phase-item">
+                        <div class="phase-name">Phase ${index + 1}: ${phase.name}</div>
+                        <div class="phase-duration">
+                            📅 ${phase.start_date} | ⏱️ ${phase.duration_days} days
+                        </div>
+                        <div class="phase-description">${phase.description}</div>
+                    </div>
+                `;
+            });
+            
+            const totalDays = plan.phases.reduce((sum, p) => sum + p.duration_days, 0);
+            
+            resultsDiv.innerHTML = `
+                <div class="result-card">
+                    <h3>📋 ${plan.project_name}</h3>
+                    
+                    <div class="plan-section">
+                        <h4>🎯 Project Overview</h4>
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                            ${plan.user_idea}
+                        </p>
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                            <span class="critique-badge approve-badge">
+                                ✓ Approved by Critic Agent
+                            </span>
+                            <span class="critique-badge" style="background: rgba(0, 212, 255, 0.1); border-color: var(--accent-secondary); color: var(--accent-secondary);">
+                                📊 ${plan.phases.length} Phases
+                            </span>
+                            <span class="critique-badge" style="background: rgba(0, 212, 255, 0.1); border-color: var(--accent-secondary); color: var(--accent-secondary);">
+                                ⏳ ${totalDays} Days Total
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="plan-section">
+                        <h4>🗓️ Project Timeline</h4>
+                        ${phasesHTML}
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button class="action-btn primary" onclick="exportPlan()">
+                            📥 Export Plan
+                        </button>
+                        <button class="action-btn" onclick="modifyPhase()">
+                            ✏️ Modify Phase
+                        </button>
+                        <button class="action-btn" onclick="addPhase()">
+                            ➕ Add Phase
+                        </button>
+                        <button class="action-btn" onclick="generateCalendar()">
+                            📅 Export Calendar
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function exportPlan() {
+            if (!currentPlan) return;
+            
+            const markdown = generateMarkdown(currentPlan);
+            downloadFile(`${currentPlan.project_name}_plan.md`, markdown);
+            
+            addMessage('bot', '✅ Project plan exported as Markdown! You can now import it into any document editor.');
+        }
+
+        function generateCalendar() {
+            if (!currentPlan) return;
+            
+            const ics = generateICS(currentPlan);
+            downloadFile(`${currentPlan.project_name}_timeline.ics`, ics);
+            
+            addMessage('bot', '✅ Calendar file generated! Import it into Google Calendar or any calendar app.');
+        }
+
+        function modifyPhase() {
+            addMessage('bot', 'Which phase would you like to modify? Please specify the phase name or number, and what changes you\'d like to make.');
+        }
+
+        function addPhase() {
+            addMessage('bot', 'I\'ll help you add a new phase! Please describe:<br>• Phase name<br>• Duration (in days)<br>• What should be accomplished');
+        }
+
+        // Utility functions
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function getDateString(daysFromNow) {
+            const date = new Date();
+            date.setDate(date.getDate() + daysFromNow);
+            return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+            });
+        }
+
+        function extractProjectName(idea) {
+            // Simple extraction - in production, use the LLM
+            const words = idea.split(' ').slice(0, 4).join(' ');
+            return words.charAt(0).toUpperCase() + words.slice(1);
+        }
+
+        function generateMarkdown(plan) {
+            let md = `# ${plan.project_name}\n\n`;
+            md += `**Generated:** ${new Date().toLocaleDateString()}\n\n`;
+            md += `## Overview\n${plan.user_idea}\n\n`;
+            md += `## Project Timeline\n\n`;
+            
+            plan.phases.forEach((phase, i) => {
+                md += `### Phase ${i + 1}: ${phase.name}\n`;
+                md += `- **Start Date:** ${phase.start_date}\n`;
+                md += `- **Duration:** ${phase.duration_days} days\n`;
+                md += `- **Description:** ${phase.description}\n\n`;
+            });
+            
+            return md;
+        }
+
+        function generateICS(plan) {
+            let ics = 'BEGIN:VCALENDAR\n';
+            ics += 'VERSION:2.0\n';
+            ics += 'PRODID:-//AI Project Manager//EN\n';
+            
+            plan.phases.forEach(phase => {
+                ics += 'BEGIN:VEVENT\n';
+                ics += `SUMMARY:${phase.name}\n`;
+                ics += `DTSTART:${formatDateForICS(phase.start_date)}\n`;
+                ics += `DESCRIPTION:${phase.description}\n`;
+                ics += 'END:VEVENT\n';
+            });
+            
+            ics += 'END:VCALENDAR';
+            return ics;
+        }
+
+        function formatDateForICS(dateStr) {
+            const date = new Date(dateStr);
+            return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        }
+
+        function downloadFile(filename, content) {
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

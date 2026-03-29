@@ -43,3 +43,8 @@ reflection loop.
 - app.py — Flask backend with multi-agent logic
 - ai_project_manager_webapp.html — Frontend UI
 - requirements.txt — Python dependencies
+
+## Sneak a peek
+<img width="1821" height="911" alt="Screenshot from 2026-03-29 18-18-07" src="https://github.com/user-attachments/assets/9f0a1840-8bcd-4405-b9b8-827e8baa9ff7" />
+<img width="1821" height="911" alt="Screenshot from 2026-03-29 18-18-34" src="https://github.com/user-attachments/assets/61f7e85f-6934-47b0-ac50-ad50c7309e3f" />
+<img width="1821" height="911" alt="Screenshot from 2026-03-29 18-18-41" src="https://github.com/user-attachments/assets/360991b3-0d17-4b99-84ef-6215d07c3244" />
